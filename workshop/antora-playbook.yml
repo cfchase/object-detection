@@ -1,0 +1,26 @@
+site:
+  title: Object Detection Workshop
+  start_page: rhods-od-workshop::index.adoc
+content:
+  sources:
+    - url: https://github.com/cfchase/rhods-od-workshop.git
+      branches: [dev]
+      start_path: documentation
+asciidoc:
+  attributes:
+    release-version: master
+    page-pagination: true
+  extensions:
+    - ./lib/tab-block.js
+    - ./lib/remote-include-processor.js
+
+ui:
+  bundle:
+    url: https://github.com/redhat-developer-demos/rhd-tutorial-ui/releases/download/v0.1.9/ui-bundle.zip
+    snapshot: true
+  supplemental_files:
+    - path: ./supplemental-ui
+    - path: .nojekyll
+    - path: ui.yml
+      contents: "static_files: [ .nojekyll ]"
+
