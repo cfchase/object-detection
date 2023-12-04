@@ -1,0 +1,180 @@
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  name: model-training-pipeline-kfp
+  annotations:
+    tekton.dev/output_artifacts: '{}'
+    tekton.dev/input_artifacts: '{}'
+    tekton.dev/artifact_bucket: mlpipeline
+    tekton.dev/artifact_endpoint: minio-service.kubeflow:9000
+    tekton.dev/artifact_endpoint_scheme: http://
+    tekton.dev/artifact_items: '{"convert-model": [], "ingest-data": [], "preprocess-data":
+      [], "train-model": [], "upload-model": []}'
+    sidecar.istio.io/inject: "false"
+    tekton.dev/template: ''
+    pipelines.kubeflow.org/big_data_passing_format: $(workspaces.$TASK_NAME.path)/artifacts/$ORIG_PR_NAME/$TASKRUN_NAME/$TASK_PARAM_NAME
+    pipelines.kubeflow.org/pipeline_spec: '{"name": "model_training_pipeline_kfp"}'
+  labels:
+    pipelines.kubeflow.org/pipelinename: ''
+    pipelines.kubeflow.org/generation: ''
+spec:
+  pipelineSpec:
+    tasks:
+    - name: ingest-data
+      taskSpec:
+        steps:
+        - name: main
+          command:
+          - sh
+          - -ec
+          - |
+            program_path=$(mktemp)
+            printf "%s" "$0" > "$program_path"
+            python3 -u "$program_path" "$@"
+          - |
+            def ingest_data():
+                import time
+                time.sleep(60)
+                print("data ingestion complete")
+
+            import argparse
+            _parser = argparse.ArgumentParser(prog='Ingest data', description='')
+            _parsed_args = vars(_parser.parse_args())
+
+            _outputs = ingest_data(**_parsed_args)
+          image: quay.io/modh/runtime-images:runtime-pytorch-ubi9-python-3.9-2023b-20231116
+        metadata:
+          labels:
+            pipelines.kubeflow.org/cache_enabled: "true"
+          annotations:
+            pipelines.kubeflow.org/component_spec_digest: '{"name": "Ingest data",
+              "outputs": [], "version": "Ingest data@sha256=3eb436d391374f829987512ae9f485b2d414f67bf1faaa0a06ecde6824b8f984"}'
+    - name: preprocess-data
+      taskSpec:
+        steps:
+        - name: main
+          command:
+          - sh
+          - -ec
+          - |
+            program_path=$(mktemp)
+            printf "%s" "$0" > "$program_path"
+            python3 -u "$program_path" "$@"
+          - |
+            def preprocess_data():
+                import time
+                time.sleep(60)
+                print("preprocessing data complete")
+
+            import argparse
+            _parser = argparse.ArgumentParser(prog='Preprocess data', description='')
+            _parsed_args = vars(_parser.parse_args())
+
+            _outputs = preprocess_data(**_parsed_args)
+          image: quay.io/modh/runtime-images:runtime-pytorch-ubi9-python-3.9-2023b-20231116
+        metadata:
+          labels:
+            pipelines.kubeflow.org/cache_enabled: "true"
+          annotations:
+            pipelines.kubeflow.org/component_spec_digest: '{"name": "Preprocess data",
+              "outputs": [], "version": "Preprocess data@sha256=eb6dbd4ce000e18f5519412e225ece71f7afec837826be4ad2552106d9f3513c"}'
+      runAfter:
+      - ingest-data
+    - name: train-model
+      taskSpec:
+        steps:
+        - name: main
+          command:
+          - sh
+          - -ec
+          - |
+            program_path=$(mktemp)
+            printf "%s" "$0" > "$program_path"
+            python3 -u "$program_path" "$@"
+          - |
+            def train_model():
+                import time
+                time.sleep(60)
+                print("model training complete")
+
+            import argparse
+            _parser = argparse.ArgumentParser(prog='Train model', description='')
+            _parsed_args = vars(_parser.parse_args())
+
+            _outputs = train_model(**_parsed_args)
+          image: quay.io/modh/runtime-images:runtime-pytorch-ubi9-python-3.9-2023b-20231116
+        metadata:
+          labels:
+            pipelines.kubeflow.org/cache_enabled: "true"
+          annotations:
+            pipelines.kubeflow.org/component_spec_digest: '{"name": "Train model",
+              "outputs": [], "version": "Train model@sha256=fe5627cb046258c6e19d0660761d7791702d9256c114bb1f709e5531cbbc50dd"}'
+      runAfter:
+      - preprocess-data
+    - name: convert-model
+      taskSpec:
+        steps:
+        - name: main
+          command:
+          - sh
+          - -ec
+          - |
+            program_path=$(mktemp)
+            printf "%s" "$0" > "$program_path"
+            python3 -u "$program_path" "$@"
+          - |
+            def convert_model():
+                import time
+                time.sleep(60)
+                print("model conversion complete")
+
+            import argparse
+            _parser = argparse.ArgumentParser(prog='Convert model', description='')
+            _parsed_args = vars(_parser.parse_args())
+
+            _outputs = convert_model(**_parsed_args)
+          image: quay.io/modh/runtime-images:runtime-pytorch-ubi9-python-3.9-2023b-20231116
+        metadata:
+          labels:
+            pipelines.kubeflow.org/cache_enabled: "true"
+          annotations:
+            pipelines.kubeflow.org/component_spec_digest: '{"name": "Convert model",
+              "outputs": [], "version": "Convert model@sha256=c627417abdd2ff9f7853373b4fddc41cc48088f5e759520ac3e5b99c0bd40d80"}'
+      runAfter:
+      - train-model
+    - name: upload-model
+      taskSpec:
+        steps:
+        - name: main
+          command:
+          - sh
+          - -c
+          - (PIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet --no-warn-script-location
+            'boto3' 'botocore' || PIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install
+            --quiet --no-warn-script-location 'boto3' 'botocore' --user) && "$0" "$@"
+          - sh
+          - -ec
+          - |
+            program_path=$(mktemp)
+            printf "%s" "$0" > "$program_path"
+            python3 -u "$program_path" "$@"
+          - |
+            def upload_model():
+                import time
+                time.sleep(60)
+                print("model upload complete")
+
+            import argparse
+            _parser = argparse.ArgumentParser(prog='Upload model', description='')
+            _parsed_args = vars(_parser.parse_args())
+
+            _outputs = upload_model(**_parsed_args)
+          image: quay.io/modh/runtime-images:runtime-pytorch-ubi9-python-3.9-2023b-20231116
+        metadata:
+          labels:
+            pipelines.kubeflow.org/cache_enabled: "true"
+          annotations:
+            pipelines.kubeflow.org/component_spec_digest: '{"name": "Upload model",
+              "outputs": [], "version": "Upload model@sha256=5b26ff1e5b59c0791cca438da9d979a332821523ee30441c05ceab03437aecd5"}'
+      runAfter:
+      - convert-model
